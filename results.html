@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Results</title>
+</head>
+
+<body>
+
+<h1>Results</h1>
+
+<pre id="outputPreview"></pre>
+
+<p>
+    <a id="downloadLink" download="output.txt">
+        Download output.txt
+    </a>
+</p>
+
+<p>
+    <a href="index.html">Run again</a>
+</p>
+
+<script>
+const outputText = sessionStorage.getItem("outputText");
+
+if (outputText === null) {
+    document.getElementById("outputPreview").textContent =
+        "No results are available.";
+} else {
+
+    // Display result
+    document.getElementById("outputPreview").textContent = outputText;
+
+    // Create downloadable output.txt
+    const blob = new Blob([outputText], {
+        type: "text/plain"
+    });
+
+    const url = URL.createObjectURL(blob);
+
+    document.getElementById("downloadLink").href = url;
+}
+</script>
+
+</body>
+</html>

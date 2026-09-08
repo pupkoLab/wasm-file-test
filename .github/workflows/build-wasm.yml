@@ -19,7 +19,7 @@ jobs:
 
       - name: Build processor
         run: |
-          emcc processor.cpp -o processor.js \
+          em++ processor.cpp -o processor.js \
             -s FORCE_FILESYSTEM=1 \
             -s EXPORTED_RUNTIME_METHODS='["FS","callMain"]'
 

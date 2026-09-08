@@ -1,0 +1,32 @@
+name: Build WebAssembly
+
+on:
+  push:
+    paths:
+      - 'processor.cpp'
+      - '.github/workflows/build-wasm.yml'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Emscripten
+        uses: mymindstorm/setup-emsdk@v14
+
+      - name: Build processor
+        run: |
+          emcc processor.cpp -o processor.js \
+            -s FORCE_FILESYSTEM=1 \
+            -s EXPORTED_RUNTIME_METHODS='["FS","callMain"]'
+
+      - name: Commit generated files
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add processor.js processor.wasm
+          git diff --cached --quiet || git commit -m "Build WebAssembly"
+          git push

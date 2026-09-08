@@ -12,26 +12,22 @@
 <p>Select a text file:</p>
 
 <input type="file" id="inputFile">
-<button id="runButton" disabled>Run C++ program</button>
 
-<div id="results" style="display:none;">
-    <h2>Results</h2>
+<button id="runButton" disabled>
+    Run C++ program
+</button>
 
-    <pre id="outputPreview"></pre>
-
-    <p>
-        <a id="downloadLink" download="output.txt">
-            Download output.txt
-        </a>
-    </p>
-</div>
+<p id="status"></p>
 
 <script>
 var Module = {
+
     noInitialRun: true,
 
     onRuntimeInitialized: function () {
         document.getElementById("runButton").disabled = false;
+        document.getElementById("status").textContent =
+            "WebAssembly ready.";
     }
 };
 </script>
@@ -39,44 +35,64 @@ var Module = {
 <script src="processor.js"></script>
 
 <script>
-document.getElementById("runButton").addEventListener("click", async function () {
 
-    const input = document.getElementById("inputFile");
+document.getElementById("runButton").addEventListener(
+    "click",
+    async function () {
 
-    if (input.files.length === 0) {
-        alert("Please select a file.");
-        return;
+        const input = document.getElementById("inputFile");
+
+        if (input.files.length === 0) {
+            alert("Please select a file.");
+            return;
+        }
+
+        document.getElementById("status").textContent =
+            "Running...";
+
+        const file = input.files[0];
+
+        // Read the uploaded file from the browser
+        const data = new Uint8Array(
+            await file.arrayBuffer()
+        );
+
+        // Remove files from an earlier run, if they exist
+        try {
+            FS.unlink("/input.txt");
+        } catch (e) {}
+
+        try {
+            FS.unlink("/output.txt");
+        } catch (e) {}
+
+        // Copy the uploaded file into
+        // Emscripten's virtual filesystem
+        FS.writeFile("/input.txt", data);
+
+        // Run the C++ main() function
+        Module.callMain([]);
+
+        // Read the output file created by C++
+        const outputData =
+            FS.readFile("/output.txt");
+
+        const outputText =
+            new TextDecoder().decode(outputData);
+
+        // Save the result temporarily in the browser
+        // so results.html can access it
+        sessionStorage.setItem(
+            "outputText",
+            outputText
+        );
+
+        // Go to the results page
+        window.location.href =
+            "results.html";
     }
+);
 
-    const file = input.files[0];
-    const data = new Uint8Array(await file.arrayBuffer());
-
-    // Delete files from a previous run
-    try { FS.unlink("/input.txt"); } catch (e) {}
-    try { FS.unlink("/output.txt"); } catch (e) {}
-
-    // Copy uploaded file into the virtual filesystem
-    FS.writeFile("/input.txt", data);
-
-    // Run the C++ main()
-    Module.callMain([]);
-
-    // Read the file created by C++
-    const outputData = FS.readFile("/output.txt");
-    const outputText = new TextDecoder().decode(outputData);
-
-    // Display it
-    document.getElementById("outputPreview").textContent = outputText;
-
-    // Make output.txt downloadable
-    const blob = new Blob([outputData], {type: "text/plain"});
-    const url = URL.createObjectURL(blob);
-
-    const link = document.getElementById("downloadLink");
-    link.href = url;
-
-    document.getElementById("results").style.display = "block";
-});
 </script>
 
 </body>
